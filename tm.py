@@ -82,13 +82,16 @@ class Problem:
         self._b = b
 
     def __str__(self):
-        return "%(a)s * %(b)s = ? [%(wrong_answers)s]" % dict(
+        return "%(a)s * %(b)s = ? [%(answers)s]" % dict(
                 a=self._a,
                 b=self._b,
-                wrong_answers=", ".join(str(k) for k in self.wrong_answers()))
+                answers=", ".join(str(k) for k in self.answers()))
 
     def answer(self):
         return self._a * self._b
+
+    def answers(self):
+        return sorted(random.sample(self.wrong_answers().keys(), 3) + [self.answer()])
 
     def wrong_answers(self):
         closest_as = closest_ns(self._a)
