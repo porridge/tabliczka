@@ -91,7 +91,9 @@ class Problem:
         return self._a * self._b
 
     def answers(self):
-        return sorted(random.sample(self.wrong_answers().keys(), 3) + [self.answer()])
+        answers = list(random.sample(self.wrong_answers().keys(), 3)) + [self.answer()]
+        random.shuffle(answers)
+        return answers
 
     def wrong_answers(self):
         closest_as = closest_ns(self._a)
