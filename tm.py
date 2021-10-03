@@ -3,10 +3,14 @@
 import itertools
 import pygame
 import random
+import time
 
 
 _NUMBERS = range(1, 11)
-_QUESTIONS = list(itertools.product(_NUMBERS, _NUMBERS))
+_FREQ_UNKNOWN = 50
+_FREQ_SLOW = 30
+_FREQ_QUICK = 1
+_QUICK_ANSWER_SEC = 3
 
 
 def main():
@@ -14,7 +18,7 @@ def main():
     ui = start_ui()
     state = load_state()
     while True:
-        problem = generate_problem(state)
+        problem = state.generate_problem()
         answer = ui.show_problem_and_get_answer(problem)
         state.update_from(problem, answer)
         state.save()
@@ -28,17 +32,29 @@ def load_state():
     return State()
 
 
-def generate_problem(state):
-    return Problem(*random.choice(_QUESTIONS))
-
 
 class State:
+
+    def __init__(self):
+        self._frequency_map = dict((q, _FREQ_UNKNOWN) for q in itertools.product(_NUMBERS, _NUMBERS))
     
     def update_from(self, problem, answer):
-        pass
+        q = problem._question()
+        # TODO: take historical data into account as well
+        if not problem.was_correct(answer):
+            self._frequency_map[q] = _FREQ_UNKNOWN
+        elif answer.delay() <= _QUICK_ANSWER_SEC:
+            self._frequency_map[q] = _FREQ_QUICK
+        else:
+            self._frequency_map[q] = _FREQ_SLOW
 
     def save(self):
-        pass
+        print(self._frequency_map)
+
+    def generate_problem(self):
+        repetitions = (itertools.repeat(e[0], e[1]) for e in self._frequency_map.items())
+        questions = list(i for i in (itertools.chain(*repetitions)))
+        return Problem(*random.choice(questions))
 
 
 class CLI:
@@ -48,7 +64,8 @@ class CLI:
 
     def show_problem_and_get_answer(self, problem):
         print(problem)
-        return Answer(input())
+        asked_time = time.time()
+        return Answer(input(), asked_time)
 
 
 class GUI:
@@ -87,6 +104,9 @@ class Problem:
                 b=self._b,
                 answers=", ".join(str(k) for k in self.answers()))
 
+    def _question(self):
+        return (self._a, self._b)
+
     def correct_answer(self):
         return self._a * self._b
 
@@ -109,6 +129,9 @@ class Problem:
         del close_problems[self.correct_answer()]
         return close_problems
 
+    def was_correct(self, answer):
+        return self.correct_answer() == answer.number()
+
 
 def closest_ns(n):
     if n == 1:
@@ -129,8 +152,15 @@ def close_ns(n):
 
 
 class Answer:
-    def __init__(self, text):
+    def __init__(self, text, asked_time):
         self._text = text
+        self._delay = time.time() - asked_time
+
+    def delay(self):
+        return self._delay
+
+    def number(self):
+        return int(self._text)
 
 
 if __name__ == '__main__':
