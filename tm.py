@@ -87,26 +87,26 @@ class Problem:
                 b=self._b,
                 answers=", ".join(str(k) for k in self.answers()))
 
-    def answer(self):
+    def correct_answer(self):
         return self._a * self._b
 
     def answers(self):
-        answers = list(random.sample(self.wrong_answers().keys(), 3)) + [self.answer()]
+        answers = list(random.sample(self.wrong_answers().keys(), 3)) + [self.correct_answer()]
         random.shuffle(answers)
         return answers
 
     def wrong_answers(self):
-        # TODO: also generate answer+1, answer+2, answer-1, answer-2, ...
+        # TODO: also generate correct_answer+1, +2, -1, -2, ...
         closest_as = closest_ns(self._a)
         closest_bs = closest_ns(self._b)
         closest_problems = dict((p[0]*p[1], p) for p in itertools.product(closest_as, closest_bs))
-        del closest_problems[self.answer()]
+        del closest_problems[self.correct_answer()]
         if len(closest_problems) >= 3:
             return closest_problems
         close_as = close_ns(self._a)
         close_bs = close_ns(self._b)
         close_problems = dict((p[0]*p[1], p) for p in itertools.product(close_as, close_bs))
-        del close_problems[self.answer()]
+        del close_problems[self.correct_answer()]
         return close_problems
 
 
