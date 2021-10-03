@@ -96,6 +96,7 @@ class Problem:
         return answers
 
     def wrong_answers(self):
+        # TODO: also generate answer+1, answer+2, answer-1, answer-2, ...
         closest_as = closest_ns(self._a)
         closest_bs = closest_ns(self._b)
         closest_problems = dict((p[0]*p[1], p) for p in itertools.product(closest_as, closest_bs))
