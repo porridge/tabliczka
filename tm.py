@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 
 import itertools
+import logging
+import pickle
+import os.path
 import pygame
 import random
 import time
@@ -11,12 +14,13 @@ _FREQ_UNKNOWN = 50
 _FREQ_SLOW = 30
 _FREQ_QUICK = 1
 _QUICK_ANSWER_SEC = 3
+_STATE = os.path.expanduser("~/.tabliczka")  # TODO: use XDG_...
 
 
 def main():
 
     ui = start_ui()
-    state = load_state()
+    state = State()
     while True:
         problem = state.generate_problem()
         answer = ui.show_problem_and_get_answer(problem)
@@ -28,15 +32,15 @@ def start_ui():
     return CLI().start()
 
 
-def load_state():
-    return State()
-
-
-
 class State:
 
     def __init__(self):
-        self._frequency_map = dict((q, _FREQ_UNKNOWN) for q in itertools.product(_NUMBERS, _NUMBERS))
+        try:
+            with open(_STATE, "rb") as state_file:
+                self._frequency_map = pickle.load(state_file)
+        except Exception as e:
+            logging.warning('Failed to load state, creating empty state: %s' % e)
+            self._frequency_map = dict((q, _FREQ_UNKNOWN) for q in itertools.product(_NUMBERS, _NUMBERS))
     
     def update_from(self, problem, answer):
         q = problem._question()
@@ -49,7 +53,8 @@ class State:
             self._frequency_map[q] = _FREQ_SLOW
 
     def save(self):
-        print(self._frequency_map)
+        with open(_STATE, "wb") as state_file:
+            pickle.dump(self._frequency_map, state_file)
 
     def generate_problem(self):
         repetitions = (itertools.repeat(e[0], e[1]) for e in self._frequency_map.items())
