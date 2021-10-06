@@ -71,6 +71,7 @@ class CLI:
         print(problem)
         asked_time = time.time()
         problem.answered(input(), asked_time)
+        print(":-)" if problem.answered_correctly() else ":-(")
 
 
 class GUI:
