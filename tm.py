@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import argparse
 import itertools
 import logging
 import pickle
@@ -17,19 +18,35 @@ _QUICK_ANSWER_SEC = 3
 _STATE = os.path.expanduser("~/.tabliczka")  # TODO: use XDG_...
 
 
-def main():
+class QuitException(Exception):
+    pass
 
-    ui = start_ui()
+
+def main():
+    ui = get_ui_class()().start()
+    try:
+        run(ui)
+    except QuitException:
+        pass
+    finally:
+        ui.finish()
+
+
+def get_ui_class():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ui', choices=['cli', 'gui'])
+    args = parser.parse_args()
+
+    return CLI if args.ui == 'cli' else GUI
+
+
+def run(ui):
     state = State()
     while True:
         problem = state.generate_problem()
-        ui.show_problem_and_get_answer(problem)
+        ui.solve_problem(problem)
         state.update_from(problem)
         state.save()
-
-
-def start_ui():
-    return CLI().start()
 
 
 class State:
@@ -63,12 +80,14 @@ class State:
 
 
 class CLI:
+    def finish(self):
+        pass
 
     def start(self):
         return self
 
-    def show_problem_and_get_answer(self, problem):
-        print(problem)
+    def solve_problem(self, problem):
+        print("%s [%s]" % (problem, ", ".join(str(k) for k in self.answers())))
         asked_time = time.time()
         problem.answered(input(), asked_time)
         print(":-)" if problem.answered_correctly() else ":-(")
@@ -77,25 +96,55 @@ class CLI:
 class GUI:
 
     def __init__(self):
-        self._digit_size = (40, 80)
-        self._screen_size = (self._digit_size[0] * (2+3+2+7+2+3+2), self._digit_size[1] * 7)
+        pygame.init()
+        self._font_size = 80
+        self._font = pygame.font.SysFont("monospace", self._font_size)
+        self._digit_size = self._font.size('J')
+        self._screen_size = (self._font.size(' 100  10 * 10 = ?  100 ')[0], self._digit_size[1] * 7)
         self._screen = pygame.display.set_mode(self._screen_size)
+
+
+    def finish(self):
+        pygame.quit()
 
     def start(self):
         pygame.display.flip()
         return self
 
-    def show_problem_and_get_answer(self, problem):
-        problem.answered("", time.time())
+    def solve_problem(self, problem):
+        self._screen.fill(pygame.Color('white'))
+        text_color = pygame.Color('black')
+        question = self._font.render(str(problem), 1, text_color)
+        screen_center = self._screen.get_rect().center
+        question_rect = question.get_rect(center=screen_center)
+        pygame.draw.rect(self._screen, pygame.Color('lightskyblue'), question_rect)
+        self._screen.blit(question, question_rect)
+
+        answers = problem.answers()
+
+        answer_up = self._font.render(answers[0], 1, text_color)
+        self._screen.blit(answer_up, answer_up.get_rect(center=(screen_center[0], int(1.5*self._digit_size[1]))))
+
+        answer_right = self._font.render(answers[1], 1, text_color)
+        self._screen.blit(answer_right, answer_up.get_rect(center=(int(21*self._digit_size[0]), screen_center[1])))
+
+        answer_down = self._font.render(answers[2], 1, text_color)
+        self._screen.blit(answer_down, answer_down.get_rect(center=(screen_center[0], int(5.5*self._digit_size[1]))))
+
+        answer_left = self._font.render(answers[3], 1, text_color)
+        self._screen.blit(answer_left, answer_up.get_rect(center=(int(3*self._digit_size[0]), screen_center[1])))
+
+        pygame.display.flip()
+        asked_time = time.time()
 
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    raise QuitException()
+                if event.type == pygame.KEYDOWN and event.unicode and event.unicode in 'wdsa':
+                    problem.answered(answers['wdsa'.index(event.unicode)], asked_time)
+                    # TODO: provide feedback
                     return
-
-            screen.fill((255, 255, 255))
-            pygame.draw.circle(screen, (0, 0, random.choice(range(0,255))), (250, 250), 75)
-            pygame.display.flip()
 
 
 class Problem:
@@ -105,10 +154,7 @@ class Problem:
         self._b = b
 
     def __str__(self):
-        return "%(a)s * %(b)s = ? [%(answers)s]" % dict(
-                a=self._a,
-                b=self._b,
-                answers=", ".join(str(k) for k in self.answers()))
+        return "%(a)s * %(b)s = ?" % dict(a=self._a, b=self._b)
 
     def _question(self):
         return (self._a, self._b)
@@ -166,9 +212,4 @@ def close_ns(n):
 
 
 if __name__ == '__main__':
-    pygame.init()
-    try:
-      main()
-    finally:
-      pygame.quit()
-
+    main()
