@@ -47,7 +47,7 @@ def run(ui):
     state = State()
     while True:
         problem = state.generate_problem()
-        ui.solve_problem(problem)
+        ui.solve_problem(problem, state)
         state.update_from(problem)
         state.save()
 
@@ -101,6 +101,12 @@ class State:
         print('Correct:', self._correct_count)
         print('Errors:', self._error_count)
 
+    def correct_count(self):
+        return self._correct_count
+
+    def error_count(self):
+        return self._error_count
+
 
 class CLI:
     def __enter__(self):
@@ -109,7 +115,7 @@ class CLI:
     def __exit__(self, *exc):
         pass
 
-    def solve_problem(self, problem):
+    def solve_problem(self, problem, state):
         print("%s [%s]" % (problem, ", ".join(str(k) for k in self.answers())))
         asked_time = time.time()
         problem.answered(input(), asked_time)
@@ -119,13 +125,16 @@ class CLI:
 class GUI:
     _background_color = pygame.Color('white')
     _text_color = pygame.Color('black')
+    _score_color = pygame.Color('gray')
 
     def __init__(self):
         self._font_size = 80
+        self._score_font_size = 50
 
     def __enter__(self):
         pygame.init()
         self._font = pygame.font.SysFont("monospace", self._font_size)
+        self._score_font = pygame.font.SysFont("unifont", self._score_font_size)
         self._digit_size = self._font.size('J')
         self._screen_size = (self._font.size(' 100  10 * 10 = ?  100 ')[0], self._digit_size[1] * 7)
         self._screen = pygame.display.set_mode(self._screen_size)
@@ -135,9 +144,19 @@ class GUI:
     def __exit__(self, *exc):
         pygame.quit()
 
-    def solve_problem(self, problem):
+    def solve_problem(self, problem, state):
         self._screen.fill(self._background_color)
         screen_center = self._screen.get_rect().center
+        screen_bottom_left = self._screen.get_rect().bottomleft
+        screen_bottom_right = self._screen.get_rect().bottomright
+
+        correct_score = self._score_font.render('✅ %4d' % state.correct_count(), 1, self._score_color)
+        correct_score_rect = correct_score.get_rect(bottomleft=screen_bottom_left)
+        self._screen.blit(correct_score, correct_score_rect)
+
+        error_score = self._score_font.render('%4d ❌' % state.error_count(), 1, self._score_color)
+        error_score_rect = error_score.get_rect(bottomright=screen_bottom_right)
+        self._screen.blit(error_score, error_score_rect)
 
         question = self._font.render(str(problem), 1, self._text_color)
         question_rect = question.get_rect(center=screen_center)
