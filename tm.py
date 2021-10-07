@@ -117,6 +117,8 @@ class CLI:
 
 
 class GUI:
+    _background_color = pygame.Color('white')
+    _text_color = pygame.Color('black')
 
     def __init__(self):
         self._font_size = 80
@@ -134,26 +136,26 @@ class GUI:
         pygame.quit()
 
     def solve_problem(self, problem):
-        self._screen.fill(pygame.Color('white'))
-        text_color = pygame.Color('black')
-        question = self._font.render(str(problem), 1, text_color)
+        self._screen.fill(self._background_color)
         screen_center = self._screen.get_rect().center
+
+        question = self._font.render(str(problem), 1, self._text_color)
         question_rect = question.get_rect(center=screen_center)
         pygame.draw.rect(self._screen, pygame.Color('lightskyblue'), question_rect)
         self._screen.blit(question, question_rect)
 
         answers = problem.answers()
 
-        answer_up = self._font.render(answers[0], 1, text_color)
+        answer_up = self._font.render(answers[0], 1, self._text_color)
         self._screen.blit(answer_up, answer_up.get_rect(center=(screen_center[0], int(1.5*self._digit_size[1]))))
 
-        answer_right = self._font.render(answers[1], 1, text_color)
+        answer_right = self._font.render(answers[1], 1, self._text_color)
         self._screen.blit(answer_right, answer_up.get_rect(center=(int(21*self._digit_size[0]), screen_center[1])))
 
-        answer_down = self._font.render(answers[2], 1, text_color)
+        answer_down = self._font.render(answers[2], 1, self._text_color)
         self._screen.blit(answer_down, answer_down.get_rect(center=(screen_center[0], int(5.5*self._digit_size[1]))))
 
-        answer_left = self._font.render(answers[3], 1, text_color)
+        answer_left = self._font.render(answers[3], 1, self._text_color)
         self._screen.blit(answer_left, answer_up.get_rect(center=(int(3*self._digit_size[0]), screen_center[1])))
 
         pygame.display.flip()
