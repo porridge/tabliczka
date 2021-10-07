@@ -14,7 +14,7 @@ _NUMBERS = range(1, 11)
 _FREQ_UNKNOWN = 50
 _FREQ_SLOW = 30
 _FREQ_QUICK = 1
-_QUICK_ANSWER_SEC = 3
+_QUICK_ANSWER_SEC = 5
 _STATE = os.path.expanduser("~/.tabliczka")  # TODO: use XDG_...
 
 
