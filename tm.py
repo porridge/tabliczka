@@ -32,13 +32,11 @@ def main():
         State().dump()
         return
 
-    ui = get_ui_class(args.ui)().start()
-    try:
-        run(ui)
-    except QuitException:
-        pass
-    finally:
-        ui.finish()
+    with get_ui_class(args.ui)() as ui:
+        try:
+            run(ui)
+        except QuitException:
+            pass
 
 
 def get_ui_class(ui_name):
@@ -105,11 +103,11 @@ class State:
 
 
 class CLI:
-    def finish(self):
-        pass
-
-    def start(self):
+    def __enter__(self):
         return self
+
+    def __exit__(self, *exc):
+        pass
 
     def solve_problem(self, problem):
         print("%s [%s]" % (problem, ", ".join(str(k) for k in self.answers())))
@@ -121,20 +119,19 @@ class CLI:
 class GUI:
 
     def __init__(self):
-        pygame.init()
         self._font_size = 80
+
+    def __enter__(self):
+        pygame.init()
         self._font = pygame.font.SysFont("monospace", self._font_size)
         self._digit_size = self._font.size('J')
         self._screen_size = (self._font.size(' 100  10 * 10 = ?  100 ')[0], self._digit_size[1] * 7)
         self._screen = pygame.display.set_mode(self._screen_size)
-
-
-    def finish(self):
-        pygame.quit()
-
-    def start(self):
         pygame.display.flip()
         return self
+
+    def __exit__(self, *exc):
+        pygame.quit()
 
     def solve_problem(self, problem):
         self._screen.fill(pygame.Color('white'))
