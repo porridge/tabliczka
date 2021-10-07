@@ -23,7 +23,16 @@ class QuitException(Exception):
 
 
 def main():
-    ui = get_ui_class()().start()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ui', choices=['cli', 'gui'])
+    parser.add_argument('--dump', action='store_true', help='Just show the saved state and quit.')
+    args = parser.parse_args()
+
+    if args.dump:
+        State().dump()
+        return
+
+    ui = get_ui_class(args.ui)().start()
     try:
         run(ui)
     except QuitException:
@@ -32,12 +41,8 @@ def main():
         ui.finish()
 
 
-def get_ui_class():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ui', choices=['cli', 'gui'])
-    args = parser.parse_args()
-
-    return CLI if args.ui == 'cli' else GUI
+def get_ui_class(ui_name):
+    return CLI if ui_name == 'cli' else GUI
 
 
 def run(ui):
@@ -77,6 +82,13 @@ class State:
         repetitions = (itertools.repeat(e[0], e[1]) for e in self._frequency_map.items())
         questions = list(i for i in (itertools.chain(*repetitions)))
         return Problem(*random.choice(questions))
+
+    def dump(self):
+        print('Frequency map:')
+        print('   |', *[('%2d' % j) for j in _NUMBERS])
+        print('---+', '-'*30, sep='')
+        for i in _NUMBERS:
+            print('%2d |' % i, *[('%2d' % self._frequency_map[(i, j)]) for j in _NUMBERS])
 
 
 class CLI:
