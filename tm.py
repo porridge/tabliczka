@@ -60,6 +60,12 @@ class State:
         try:
             with open(_STATE, "rb") as state_file:
                 self._frequency_map = pickle.load(state_file)
+                try:
+                    self._correct_count = pickle.load(state_file)
+                    self._error_count = pickle.load(state_file)
+                except Exception:
+                    self._correct_count = 0
+                    self._error_count = 0
         except Exception as e:
             logging.warning('Failed to load state, creating empty state: %s' % e)
             self._frequency_map = dict((q, _FREQ_UNKNOWN) for q in itertools.product(_NUMBERS, _NUMBERS))
@@ -69,14 +75,19 @@ class State:
         # TODO: take historical data into account as well
         if not problem.answered_correctly():
             self._frequency_map[q] = _FREQ_UNKNOWN
+            self._error_count += 1
         elif problem.answer_delay() <= _QUICK_ANSWER_SEC:
             self._frequency_map[q] = _FREQ_QUICK
+            self._correct_count += 1
         else:
             self._frequency_map[q] = _FREQ_SLOW
+            self._correct_count += 1
 
     def save(self):
         with open(_STATE, "wb") as state_file:
-            pickle.dump(self._frequency_map, state_file)
+            pickle.dump(self._frequency_map, state_file, protocol=-1)
+            pickle.dump(self._correct_count, state_file, protocol=-1)
+            pickle.dump(self._error_count, state_file, protocol=-1)
 
     def generate_problem(self):
         repetitions = (itertools.repeat(e[0], e[1]) for e in self._frequency_map.items())
@@ -89,6 +100,8 @@ class State:
         print('---+', '-'*30, sep='')
         for i in _NUMBERS:
             print('%2d |' % i, *[('%2d' % self._frequency_map[(i, j)]) for j in _NUMBERS])
+        print('Correct:', self._correct_count)
+        print('Errors:', self._error_count)
 
 
 class CLI:
