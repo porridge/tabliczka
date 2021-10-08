@@ -11,6 +11,7 @@ import time
 
 
 _NUMBERS = range(1, 11)
+_ERROR_FEEDBACK_DELAY_SEC = 2
 _FREQ_UNKNOWN = 50
 _FREQ_SLOW = 30
 _FREQ_QUICK = 1
@@ -164,7 +165,7 @@ class GUI:
 
     def provide_feedback(self, problem, state):
         self._display_problem(problem, state, reveal_solution=True)
-        time.sleep(1) # TODO: is there a better way?
+        time.sleep(_ERROR_FEEDBACK_DELAY_SEC) # TODO: is there a better way?
 
     def _display_problem(self, problem, state, reveal_solution=False):
         self._screen.fill(self._background_color)
