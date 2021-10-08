@@ -206,6 +206,8 @@ class Problem:
     def __init__(self, a, b):
         self._a = a
         self._b = b
+        self._answers = list(random.sample(self.wrong_answers().keys(), 3)) + [self.correct_answer()]
+        random.shuffle(self._answers)
 
     def __str__(self):
         return "%(a)s * %(b)s = ?" % dict(a=self._a, b=self._b)
@@ -217,9 +219,7 @@ class Problem:
         return str(self._a * self._b)
 
     def answers(self):
-        answers = list(random.sample(self.wrong_answers().keys(), 3)) + [self.correct_answer()]
-        random.shuffle(answers)
-        return answers
+        return self._answers
 
     def wrong_answers(self):
         # TODO: also generate correct_answer+1, +2, -1, -2, ...
