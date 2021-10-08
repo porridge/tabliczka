@@ -49,6 +49,8 @@ def run(ui):
         problem = state.generate_problem()
         ui.solve_problem(problem, state)
         state.update_from(problem)
+        if not problem.answered_correctly():
+            ui.provide_feedback(problem, state)
         state.save()
 
 
@@ -127,6 +129,8 @@ class GUI:
     _text_color = pygame.Color('black')
     _score_color = pygame.Color('gray')
     _question_bg_color = pygame.Color('lightskyblue')
+    _answer_correct_color = pygame.Color('lightgreen')
+    _answer_error_color = pygame.Color(238, 144, 144, 255)
 
     def __init__(self):
         self._font_size = 80
@@ -146,15 +150,8 @@ class GUI:
         pygame.quit()
 
     def solve_problem(self, problem, state):
-        self._screen.fill(self._background_color)
+        answers = self._display_problem(problem, state)
 
-        self._show_correct_score(state)
-        self._show_error_score(state)
-        self._show_question(problem)
-        answers = problem.answers()
-        self._show_answers(answers)
-
-        pygame.display.flip()
         asked_time = time.time()
 
         while True:
@@ -163,8 +160,21 @@ class GUI:
                     raise QuitException()
                 if event.type == pygame.KEYDOWN and event.unicode and event.unicode in 'wdsa':
                     problem.answered(answers['wdsa'.index(event.unicode)], asked_time)
-                    # TODO: provide feedback
                     return
+
+    def provide_feedback(self, problem, state):
+        self._display_problem(problem, state, reveal_solution=True)
+        time.sleep(1) # TODO: is there a better way?
+
+    def _display_problem(self, problem, state, reveal_solution=False):
+        self._screen.fill(self._background_color)
+        self._show_correct_score(state)
+        self._show_error_score(state)
+        self._show_question(problem)
+        answers = problem.answers()
+        self._show_answers(problem, answers, reveal_solution=reveal_solution)
+        pygame.display.flip()
+        return answers
 
     def _show_correct_score(self, state):
         screen_bottom_left = self._screen.get_rect().bottomleft
@@ -185,20 +195,34 @@ class GUI:
         pygame.draw.rect(self._screen, self._question_bg_color, question_rect)
         self._screen.blit(question, question_rect)
 
-    def _show_answers(self, answers):
+    def _show_answers(self, problem, answers, reveal_solution=False):
         screen_center = self._screen.get_rect().center
 
         answer_up = self._font.render(answers[0], 1, self._text_color)
-        self._screen.blit(answer_up, answer_up.get_rect(center=(screen_center[0], int(1.5*self._digit_size[1]))))
+        answer_up_rect = answer_up.get_rect(center=(screen_center[0], int(1.5*self._digit_size[1])))
+        pygame.draw.rect(self._screen, self._answer_color(problem, answers[0], reveal_solution), answer_up_rect)
+        self._screen.blit(answer_up, answer_up_rect)
 
         answer_right = self._font.render(answers[1], 1, self._text_color)
-        self._screen.blit(answer_right, answer_up.get_rect(center=(int(21*self._digit_size[0]), screen_center[1])))
+        answer_right_rect = answer_right.get_rect(center=(int(21*self._digit_size[0]), screen_center[1]))
+        pygame.draw.rect(self._screen, self._answer_color(problem, answers[1], reveal_solution), answer_right_rect)
+        self._screen.blit(answer_right, answer_right_rect)
 
         answer_down = self._font.render(answers[2], 1, self._text_color)
-        self._screen.blit(answer_down, answer_down.get_rect(center=(screen_center[0], int(5.5*self._digit_size[1]))))
+        answer_down_rect = answer_down.get_rect(center=(screen_center[0], int(5.5*self._digit_size[1])))
+        pygame.draw.rect(self._screen, self._answer_color(problem, answers[2], reveal_solution), answer_down_rect)
+        self._screen.blit(answer_down, answer_down_rect)
 
         answer_left = self._font.render(answers[3], 1, self._text_color)
-        self._screen.blit(answer_left, answer_up.get_rect(center=(int(3*self._digit_size[0]), screen_center[1])))
+        answer_left_rect = answer_left.get_rect(center=(int(3*self._digit_size[0]), screen_center[1]))
+        pygame.draw.rect(self._screen, self._answer_color(problem, answers[3], reveal_solution), answer_left_rect)
+        self._screen.blit(answer_left, answer_left_rect)
+
+
+    def _answer_color(self, problem, answer, reveal_solution=False):
+        if not reveal_solution:
+            return self._background_color
+        return self._answer_correct_color if problem.correct_answer() == answer else self._answer_error_color
 
 
 class Problem:
