@@ -126,6 +126,7 @@ class GUI:
     _background_color = pygame.Color('white')
     _text_color = pygame.Color('black')
     _score_color = pygame.Color('gray')
+    _question_bg_color = pygame.Color('lightskyblue')
 
     def __init__(self):
         self._font_size = 80
@@ -134,7 +135,7 @@ class GUI:
     def __enter__(self):
         pygame.init()
         self._font = pygame.font.SysFont("monospace", self._font_size)
-        self._score_font = pygame.font.SysFont("unifont", self._score_font_size)
+        self._score_font = pygame.font.SysFont("unifont", self._score_font_size)  # TODO: use a picture for portability
         self._digit_size = self._font.size('J')
         self._screen_size = (self._font.size(' 100  10 * 10 = ?  100 ')[0], self._digit_size[1] * 7)
         self._screen = pygame.display.set_mode(self._screen_size)
@@ -146,36 +147,12 @@ class GUI:
 
     def solve_problem(self, problem, state):
         self._screen.fill(self._background_color)
-        screen_center = self._screen.get_rect().center
-        screen_bottom_left = self._screen.get_rect().bottomleft
-        screen_bottom_right = self._screen.get_rect().bottomright
 
-        correct_score = self._score_font.render('✅ %4d' % state.correct_count(), 1, self._score_color)
-        correct_score_rect = correct_score.get_rect(bottomleft=screen_bottom_left)
-        self._screen.blit(correct_score, correct_score_rect)
-
-        error_score = self._score_font.render('%4d ❌' % state.error_count(), 1, self._score_color)
-        error_score_rect = error_score.get_rect(bottomright=screen_bottom_right)
-        self._screen.blit(error_score, error_score_rect)
-
-        question = self._font.render(str(problem), 1, self._text_color)
-        question_rect = question.get_rect(center=screen_center)
-        pygame.draw.rect(self._screen, pygame.Color('lightskyblue'), question_rect)
-        self._screen.blit(question, question_rect)
-
+        self._show_correct_score(state)
+        self._show_error_score(state)
+        self._show_question(problem)
         answers = problem.answers()
-
-        answer_up = self._font.render(answers[0], 1, self._text_color)
-        self._screen.blit(answer_up, answer_up.get_rect(center=(screen_center[0], int(1.5*self._digit_size[1]))))
-
-        answer_right = self._font.render(answers[1], 1, self._text_color)
-        self._screen.blit(answer_right, answer_up.get_rect(center=(int(21*self._digit_size[0]), screen_center[1])))
-
-        answer_down = self._font.render(answers[2], 1, self._text_color)
-        self._screen.blit(answer_down, answer_down.get_rect(center=(screen_center[0], int(5.5*self._digit_size[1]))))
-
-        answer_left = self._font.render(answers[3], 1, self._text_color)
-        self._screen.blit(answer_left, answer_up.get_rect(center=(int(3*self._digit_size[0]), screen_center[1])))
+        self._show_answers(answers)
 
         pygame.display.flip()
         asked_time = time.time()
@@ -188,6 +165,40 @@ class GUI:
                     problem.answered(answers['wdsa'.index(event.unicode)], asked_time)
                     # TODO: provide feedback
                     return
+
+    def _show_correct_score(self, state):
+        screen_bottom_left = self._screen.get_rect().bottomleft
+        correct_score = self._score_font.render('✅ %4d' % state.correct_count(), 1, self._score_color)
+        correct_score_rect = correct_score.get_rect(bottomleft=screen_bottom_left)
+        self._screen.blit(correct_score, correct_score_rect)
+
+    def _show_error_score(self, state):
+        screen_bottom_right = self._screen.get_rect().bottomright
+        error_score = self._score_font.render('%4d ❌' % state.error_count(), 1, self._score_color)
+        error_score_rect = error_score.get_rect(bottomright=screen_bottom_right)
+        self._screen.blit(error_score, error_score_rect)
+
+    def _show_question(self, problem):
+        screen_center = self._screen.get_rect().center
+        question = self._font.render(str(problem), 1, self._text_color)
+        question_rect = question.get_rect(center=screen_center)
+        pygame.draw.rect(self._screen, self._question_bg_color, question_rect)
+        self._screen.blit(question, question_rect)
+
+    def _show_answers(self, answers):
+        screen_center = self._screen.get_rect().center
+
+        answer_up = self._font.render(answers[0], 1, self._text_color)
+        self._screen.blit(answer_up, answer_up.get_rect(center=(screen_center[0], int(1.5*self._digit_size[1]))))
+
+        answer_right = self._font.render(answers[1], 1, self._text_color)
+        self._screen.blit(answer_right, answer_up.get_rect(center=(int(21*self._digit_size[0]), screen_center[1])))
+
+        answer_down = self._font.render(answers[2], 1, self._text_color)
+        self._screen.blit(answer_down, answer_down.get_rect(center=(screen_center[0], int(5.5*self._digit_size[1]))))
+
+        answer_left = self._font.render(answers[3], 1, self._text_color)
+        self._screen.blit(answer_left, answer_up.get_rect(center=(int(3*self._digit_size[0]), screen_center[1])))
 
 
 class Problem:
