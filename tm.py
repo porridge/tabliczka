@@ -30,7 +30,7 @@ def main():
     args = parser.parse_args()
 
     if args.dump:
-        State().dump()
+        State.load().dump()
         return
 
     with get_ui_class(args.ui)() as ui:
@@ -45,7 +45,7 @@ def get_ui_class(ui_name):
 
 
 def run(ui):
-    state = State()
+    state = State.load()
     while True:
         problem = state.generate_problem()
         ui.solve_problem(problem, state)
@@ -57,19 +57,33 @@ def run(ui):
 
 class State:
 
-    def __init__(self):
+    @classmethod
+    def load(cls):
         try:
-            with open(_STATE, "rb") as state_file:
-                self._frequency_map = pickle.load(state_file)
-                try:
-                    self._correct_count = pickle.load(state_file)
-                    self._error_count = pickle.load(state_file)
-                except Exception:
-                    self._correct_count = 0
-                    self._error_count = 0
+            return cls.load_from(_STATE)
         except Exception as e:
             logging.warning('Failed to load state, creating empty state: %s' % e)
+            return cls()
+
+    @classmethod
+    def load_from(cls, state_filename):
+        with open(state_filename, "rb") as state_file:
+            frequency_map = pickle.load(state_file)
+            try:
+                correct_count = pickle.load(state_file)
+                error_count = pickle.load(state_file)
+            except Exception:
+                correct_count = 0
+                error_count = 0
+            return cls(frequency_map, correct_count, error_count)
+
+    def __init__(self, frequency_map=None, correct_count=0, error_count=0):
+        if frequency_map:
+            self._frequency_map = frequency_map
+        else:
             self._frequency_map = dict((q, _FREQ_UNKNOWN) for q in itertools.product(_NUMBERS, _NUMBERS))
+        self._correct_count = correct_count
+        self._error_count = error_count
     
     def update_from(self, problem):
         q = problem._question()
