@@ -4,7 +4,7 @@ import argparse
 import itertools
 import logging
 import pickle
-import os.path
+import os
 import pygame
 import random
 import time
@@ -16,7 +16,13 @@ _FREQ_UNKNOWN = 50
 _FREQ_SLOW = 30
 _FREQ_QUICK = 1
 _QUICK_ANSWER_SEC = 5
-_STATE = os.path.expanduser("~/.tabliczka")  # TODO: use XDG_...
+
+_home = os.path.expanduser('~')
+_xdg_state_home = os.environ.get('XDG_STATE_HOME') or os.path.join(_home, '.local', 'state')
+_state_home = os.path.join(_xdg_state_home, 'tabliczka')
+_state_file = os.path.join(_state_home, 'state.pickle')
+_log_file = os.path.join(_state_home, 'log.json')
+_LEGACY_STATE = os.path.expanduser("~/.tabliczka")
 
 
 class QuitException(Exception):
@@ -60,7 +66,10 @@ class State:
     @classmethod
     def load(cls):
         try:
-            return cls.load_from(_STATE)
+            try:
+                return cls.load_from(_state_file)
+            except:
+                return cls.load_from(_LEGACY_STATE)
         except Exception as e:
             logging.warning('Failed to load state, creating empty state: %s' % e)
             return cls()
@@ -99,7 +108,8 @@ class State:
             self._correct_count += 1
 
     def save(self):
-        with open(_STATE, "wb") as state_file:
+        os.makedirs(_state_home, mode=0o700, exist_ok=True)
+        with open(_state_file, "wb") as state_file:
             pickle.dump(self._frequency_map, state_file, protocol=-1)
             pickle.dump(self._correct_count, state_file, protocol=-1)
             pickle.dump(self._error_count, state_file, protocol=-1)
