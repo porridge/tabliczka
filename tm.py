@@ -93,7 +93,8 @@ class State:
             self._frequency_map = dict((q, _FREQ_UNKNOWN) for q in itertools.product(_NUMBERS, _NUMBERS))
         self._correct_count = correct_count
         self._error_count = error_count
-    
+        self._last_generated = None  # We do not bother storing this across executions.
+
     def update_from(self, problem):
         q = problem._question()
         # TODO: take historical data into account as well
@@ -115,9 +116,11 @@ class State:
             pickle.dump(self._error_count, state_file, protocol=-1)
 
     def generate_problem(self):
-        repetitions = (itertools.repeat(e[0], e[1]) for e in self._frequency_map.items())
+        repetitions = (itertools.repeat(e[0], e[1]) for e in self._frequency_map.items() if e[0] != self._last_generated)
         questions = list(i for i in (itertools.chain(*repetitions)))
-        return Problem(*random.choice(questions))
+        generated = random.choice(questions)
+        self._last_generated = generated
+        return Problem(*generated)
 
     def dump(self):
         print('Frequency map:')
