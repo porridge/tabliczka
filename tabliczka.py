@@ -29,10 +29,10 @@ import time
 
 _NUMBERS = range(1, 11)
 _ERROR_FEEDBACK_DELAY_SEC = 2
-_FREQ_UNKNOWN = 50
-_FREQ_SLOW = 30
+_FREQ_MAX = 100
+_ANSWER_SEC_MAX = 10
 _FREQ_QUICK = 1
-_QUICK_ANSWER_SEC = 5
+_ANSWER_SEC_QUICK= 2
 
 _home = os.path.expanduser('~')
 _xdg_state_home = os.environ.get('XDG_STATE_HOME') or os.path.join(_home, '.local', 'state')
@@ -78,6 +78,14 @@ def run(ui):
         state.save()
 
 
+def frequency(answer_delay):
+    delay_range = _ANSWER_SEC_MAX - _ANSWER_SEC_QUICK
+    freq_range = _FREQ_MAX - _FREQ_QUICK
+    delay = answer_delay - _ANSWER_SEC_QUICK
+    resp = _FREQ_QUICK + (delay / delay_range) * freq_range
+    return max(_FREQ_QUICK, min(_FREQ_MAX, resp))
+
+
 class State:
 
     @classmethod
@@ -107,7 +115,7 @@ class State:
         if frequency_map:
             self._frequency_map = frequency_map
         else:
-            self._frequency_map = dict((q, _FREQ_UNKNOWN) for q in itertools.product(_NUMBERS, _NUMBERS))
+            self._frequency_map = dict((q, _FREQ_MAX) for q in itertools.product(_NUMBERS, _NUMBERS))
         self._correct_count = correct_count
         self._error_count = error_count
         self._last_generated = None  # We do not bother storing this across executions.
@@ -116,13 +124,10 @@ class State:
         q = problem._question()
         # TODO: take historical data into account as well
         if not problem.answered_correctly():
-            self._frequency_map[q] = _FREQ_UNKNOWN
+            self._frequency_map[q] = _FREQ_MAX
             self._error_count += 1
-        elif problem.answer_delay() <= _QUICK_ANSWER_SEC:
-            self._frequency_map[q] = _FREQ_QUICK
-            self._correct_count += 1
         else:
-            self._frequency_map[q] = _FREQ_SLOW
+            self._frequency_map[q] = frequency(problem.answer_delay())
             self._correct_count += 1
 
     def save(self):
@@ -133,7 +138,7 @@ class State:
             pickle.dump(self._error_count, state_file, protocol=-1)
 
     def generate_problem(self):
-        repetitions = (itertools.repeat(e[0], e[1]) for e in self._frequency_map.items() if e[0] != self._last_generated)
+        repetitions = (itertools.repeat(e[0], int(e[1])) for e in self._frequency_map.items() if e[0] != self._last_generated)
         questions = list(i for i in (itertools.chain(*repetitions)))
         generated = random.choice(questions)
         self._last_generated = generated
@@ -141,10 +146,10 @@ class State:
 
     def dump(self):
         print('Frequency map:')
-        print('   |', *[('%2d' % j) for j in _NUMBERS])
-        print('---+', '-'*30, sep='')
+        print('   |', *[('%4d ' % j) for j in _NUMBERS])
+        print('---+', '-'*60, sep='')
         for i in _NUMBERS:
-            print('%2d |' % i, *[('%2d' % self._frequency_map[(i, j)]) for j in _NUMBERS])
+            print('%2d |' % i, *[('%5.1f' % self._frequency_map[(i, j)]) for j in _NUMBERS])
         print('Correct:', self._correct_count)
         print('Errors:', self._error_count)
 
