@@ -29,6 +29,7 @@ import time
 
 _NUMBERS = range(1, 11)
 _ERROR_FEEDBACK_DELAY_SEC = 2
+_FREQ_UNKNOWN = 101
 _FREQ_MAX = 100
 _ANSWER_SEC_MAX = 10
 _FREQ_QUICK = 1
@@ -115,19 +116,26 @@ class State:
         if frequency_map:
             self._frequency_map = frequency_map
         else:
-            self._frequency_map = dict((q, _FREQ_MAX) for q in itertools.product(_NUMBERS, _NUMBERS))
+            self._frequency_map = dict((q, _FREQ_UNKNOWN) for q in itertools.product(_NUMBERS, _NUMBERS))
         self._correct_count = correct_count
         self._error_count = error_count
         self._last_generated = None  # We do not bother storing this across executions.
 
+    def _update_frequency(self, question, latest_frequency):
+        previous = self._frequency_map[question]
+        if previous == _FREQ_UNKNOWN:
+            new = latest_frequency
+        else:
+            new = (previous + latest_frequency) / 2
+        self._frequency_map[question] = new
+
     def update_from(self, problem):
         q = problem._question()
-        # TODO: take historical data into account as well
         if not problem.answered_correctly():
-            self._frequency_map[q] = _FREQ_MAX
+            self._update_frequency(q, _FREQ_MAX)
             self._error_count += 1
         else:
-            self._frequency_map[q] = frequency(problem.answer_delay())
+            self._update_frequency(q, frequency(problem.answer_delay()))
             self._correct_count += 1
 
     def save(self):
