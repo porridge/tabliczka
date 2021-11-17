@@ -58,7 +58,13 @@ def main():
     parser.add_argument('--limit', type=int, help='Quit after correctly solving this many questions.')
     parser.add_argument('--show_scores', action='store_true', help='Show scores in main window.')
     parser.add_argument('--show_feedback', action='store_true', help='Show feedback on wrong answers.')
+    parser.add_argument('--debug', action='store_true', help='Turn on debug-level logging.')
     args = parser.parse_args()
+
+    logging.basicConfig(
+            level=(logging.DEBUG if args.debug else logging.INFO),
+            format='%(levelname).1s%(asctime)s.%(msecs)03d] %(message)s',
+            datefmt='%m%d %H:%M:%S')
 
     if args.dump:
         State.load().dump()
@@ -211,19 +217,27 @@ class GUI:
         self._should_show_feedback = show_feedback
 
     def __enter__(self):
+        logging.debug('Initializing pygame.')
         pygame.init()
+        logging.debug('Preparing main font.')
         self._font = pygame.font.SysFont("monospace", self._font_size)
         if self._should_show_scores:
+            logging.debug('Preparing score font.')
             self._score_font = pygame.font.SysFont("unifont", self._score_font_size)  # TODO: use a picture for portability
         self._digit_size = self._font.size('J')
         self._screen_size = (self._font.size(' 100  10 * 10 = ?  100 ')[0], self._digit_size[1] * 7)
+        logging.debug('Setting display mode.')
         self._screen = pygame.display.set_mode(self._screen_size)
         self._clock = pygame.time.Clock()
+        logging.debug('Enabling display.')
         pygame.display.flip()
+        logging.debug('GUI setup complete.')
         return self
 
     def __exit__(self, *exc):
+        logging.debug('Quitting pygame.')
         pygame.quit()
+        logging.debug('GUI teardown complete.')
 
     def _tick(self):
         self._clock.tick(30) # low framerate is fine for this app
@@ -236,7 +250,9 @@ class GUI:
         while True:
             self._tick()
             for event in pygame.event.get():
+                logging.debug('Processing event %s.', event)
                 if event.type == pygame.QUIT:
+                    logging.debug('Initiating shutdown.')
                     raise QuitException()
                 if event.type == pygame.KEYDOWN:
                     if event.unicode and event.unicode in _KEYS_MINECRAFT_LOWER:
@@ -265,6 +281,7 @@ class GUI:
                 # Ignore any other event
 
     def _display_problem(self, problem, state, reveal_solution=False):
+        logging.debug('Displaying %s.' % ('solution' if reveal_solution else 'problem'))
         self._screen.fill(self._background_color)
         if self._should_show_scores:
             self._show_correct_score(state)
@@ -272,7 +289,9 @@ class GUI:
         self._show_question(problem)
         answers = problem.answers()
         self._show_answers(problem, answers, reveal_solution=reveal_solution)
+        logging.debug('Updating display.')
         pygame.display.flip()
+        logging.debug('Problem displayed.')
         return answers
 
     def _show_correct_score(self, state):
