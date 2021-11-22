@@ -56,8 +56,9 @@ def main():
     parser.add_argument('--ui', choices=['cli', 'gui'])
     parser.add_argument('--dump', action='store_true', help='Just show the saved state and quit.')
     parser.add_argument('--limit', type=int, help='Quit after correctly solving this many questions.')
-    parser.add_argument('--show_scores', action='store_true', help='Show scores in main window.')
     parser.add_argument('--show_feedback', action='store_true', help='Show feedback on wrong answers.')
+    parser.add_argument('--show_scores', action='store_true', help='Show scores in main window.')
+    parser.add_argument('--score_font', default='unifont', help='Font to use for displaying scores.')
     parser.add_argument('--debug', action='store_true', help='Turn on debug-level logging.')
     parser.add_argument('--repl', action='store_true', help='Start the REPL before main program.')
     args = parser.parse_args()
@@ -75,7 +76,7 @@ def main():
         import code
         code.interact()
 
-    with get_ui_class(args.ui)(args.show_scores, args.show_feedback) as ui:
+    with get_ui_class(args.ui)(args.show_scores, args.show_feedback, args.score_font) as ui:
         try:
             run(ui, args.limit)
         except QuitException:
@@ -189,7 +190,7 @@ class State:
 
 
 class CLI:
-    def __init__(self, show_scores, show_feedback):
+    def __init__(self, show_scores, show_feedback, score_font):
         pass
 
     def __enter__(self):
@@ -215,11 +216,12 @@ class GUI:
     _answer_correct_color = pygame.Color('lightgreen')
     _answer_error_color = pygame.Color(238, 144, 144, 255)
 
-    def __init__(self, show_scores, show_feedback):
+    def __init__(self, show_scores, show_feedback, score_font):
         self._font_size = 80
         self._score_font_size = 50
         self._should_show_scores = show_scores
         self._should_show_feedback = show_feedback
+        self._score_font_name = score_font
 
     def __enter__(self):
         logging.debug('Initializing pygame.')
@@ -227,8 +229,8 @@ class GUI:
         logging.debug('Preparing main font.')
         self._font = pygame.font.SysFont("monospace", self._font_size)
         if self._should_show_scores:
-            logging.debug('Preparing score font.')
-            self._score_font = pygame.font.SysFont("unifont", self._score_font_size)  # TODO: use a picture for portability
+            logging.debug('Preparing score font "%s".', self._score_font_name)
+            self._score_font = pygame.font.SysFont(self._score_font_name, self._score_font_size)  # TODO: use a picture for portability
         self._digit_size = self._font.size('J')
         self._screen_size = (self._font.size(' 100  10 * 10 = ?  100 ')[0], self._digit_size[1] * 7)
         logging.debug('Setting display mode.')
