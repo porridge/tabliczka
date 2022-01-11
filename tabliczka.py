@@ -291,7 +291,7 @@ class Problem:
     def __init__(self, a, b):
         self._a = a
         self._b = b
-        self._answers = list(random.sample(self.wrong_answers().keys(), 3)) + [self.correct_answer()]
+        self._answers = list(random.sample(sorted(self.wrong_answers()), 3)) + [self.correct_answer()]
         random.shuffle(self._answers)
 
     def __str__(self):
