@@ -51,6 +51,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ui', choices=['cli', 'gui'])
     parser.add_argument('--dump', action='store_true', help='Just show the saved state and quit.')
+    parser.add_argument('--limit', type=int, help='Quit after correctly solving this many questions.')
     args = parser.parse_args()
 
     if args.dump:
@@ -59,7 +60,7 @@ def main():
 
     with get_ui_class(args.ui)() as ui:
         try:
-            run(ui)
+            run(ui, args.limit)
         except QuitException:
             pass
 
@@ -68,14 +69,16 @@ def get_ui_class(ui_name):
     return CLI if ui_name == 'cli' else GUI
 
 
-def run(ui):
+def run(ui, limit):
     state = State.load()
-    while True:
+    while limit is None or limit > 0:
         problem = state.generate_problem()
         ui.solve_problem(problem, state)
         state.update_from(problem)
         if not problem.answered_correctly():
             ui.provide_feedback(problem, state)
+        elif limit is not None:
+            limit -= 1
         state.save()
 
 
