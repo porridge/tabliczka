@@ -28,7 +28,7 @@ import time
 
 
 _NUMBERS = range(1, 11)
-_ERROR_FEEDBACK_DELAY_SEC = 2
+_ERROR_FEEDBACK_DELAY_MILLISEC = 2*1000
 _FREQ_UNKNOWN = 101
 _FREQ_MAX = 100
 _ANSWER_SEC_MAX = 10
@@ -204,11 +204,15 @@ class GUI:
         self._digit_size = self._font.size('J')
         self._screen_size = (self._font.size(' 100  10 * 10 = ?  100 ')[0], self._digit_size[1] * 7)
         self._screen = pygame.display.set_mode(self._screen_size)
+        self._clock = pygame.time.Clock()
         pygame.display.flip()
         return self
 
     def __exit__(self, *exc):
         pygame.quit()
+
+    def _tick(self):
+        self._clock.tick(30) # low framerate is fine for this app
 
     def solve_problem(self, problem, state):
         answers = self._display_problem(problem, state)
@@ -216,6 +220,7 @@ class GUI:
         asked_time = time.time()
 
         while True:
+            self._tick()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     raise QuitException()
@@ -225,7 +230,15 @@ class GUI:
 
     def provide_feedback(self, problem, state):
         self._display_problem(problem, state, reveal_solution=True)
-        time.sleep(_ERROR_FEEDBACK_DELAY_SEC) # TODO: is there a better way?
+        wait_start = pygame.time.get_ticks()
+        wait_end = wait_start + _ERROR_FEEDBACK_DELAY_MILLISEC
+
+        while pygame.time.get_ticks() < wait_end:
+            self._tick()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    raise QuitException()
+                # Ignore any other event
 
     def _display_problem(self, problem, state, reveal_solution=False):
         self._screen.fill(self._background_color)
