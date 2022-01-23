@@ -52,13 +52,14 @@ def main():
     parser.add_argument('--ui', choices=['cli', 'gui'])
     parser.add_argument('--dump', action='store_true', help='Just show the saved state and quit.')
     parser.add_argument('--limit', type=int, help='Quit after correctly solving this many questions.')
+    parser.add_argument('--show_scores', action='store_true', help='Show scores in main window.')
     args = parser.parse_args()
 
     if args.dump:
         State.load().dump()
         return
 
-    with get_ui_class(args.ui)() as ui:
+    with get_ui_class(args.ui)(args.show_scores) as ui:
         try:
             run(ui, args.limit)
         except QuitException:
@@ -172,6 +173,9 @@ class State:
 
 
 class CLI:
+    def __init__(self, show_scores):
+        pass
+
     def __enter__(self):
         return self
 
@@ -195,9 +199,10 @@ class GUI:
     _answer_correct_color = pygame.Color('lightgreen')
     _answer_error_color = pygame.Color(238, 144, 144, 255)
 
-    def __init__(self):
+    def __init__(self, show_scores):
         self._font_size = 80
         self._score_font_size = 50
+        self._should_show_scores = show_scores
 
     def __enter__(self):
         pygame.init()
@@ -244,8 +249,9 @@ class GUI:
 
     def _display_problem(self, problem, state, reveal_solution=False):
         self._screen.fill(self._background_color)
-        self._show_correct_score(state)
-        self._show_error_score(state)
+        if self._should_show_scores:
+            self._show_correct_score(state)
+            self._show_error_score(state)
         self._show_question(problem)
         answers = problem.answers()
         self._show_answers(problem, answers, reveal_solution=reveal_solution)
