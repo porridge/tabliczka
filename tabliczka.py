@@ -179,9 +179,11 @@ class CLI:
         pass
 
     def solve_problem(self, problem, state):
-        print("%s [%s]" % (problem, ", ".join(str(k) for k in self.answers())))
+        print("%s [%s]" % (problem, ", ".join(str(k) for k in problem.answers())))
         asked_time = time.time()
         problem.answered(input(), asked_time)
+
+    def provide_feedback(self, problem, state):
         print(":-)" if problem.answered_correctly() else ":-(")
 
 
