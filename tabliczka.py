@@ -35,6 +35,10 @@ _ANSWER_SEC_MAX = 10
 _FREQ_QUICK = 1
 _ANSWER_SEC_QUICK= 2
 
+_KEYS_MINECRAFT_LOWER = 'wdsa'
+_KEYS_MINECRAFT_UPPER = 'WDSA'
+_KEYS_ARROWS = (pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT)
+
 _home = os.path.expanduser('~')
 _xdg_state_home = os.environ.get('XDG_STATE_HOME') or os.path.join(_home, '.local', 'state')
 _state_home = os.path.join(_xdg_state_home, 'tabliczka')
@@ -231,8 +235,16 @@ class GUI:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     raise QuitException()
-                if event.type == pygame.KEYDOWN and event.unicode and event.unicode in 'wdsa':
-                    problem.answered(answers['wdsa'.index(event.unicode)], asked_time)
+                if event.type == pygame.KEYDOWN:
+                    if event.unicode and event.unicode in _KEYS_MINECRAFT_LOWER:
+                        answer_index = _KEYS_MINECRAFT_LOWER.index(event.unicode)
+                    elif event.unicode and event.unicode in _KEYS_MINECRAFT_UPPER:
+                        answer_index = _KEYS_MINECRAFT_UPPER.index(event.unicode)
+                    elif event.key in _KEYS_ARROWS:
+                        answer_index = _KEYS_ARROWS.index(event.key)
+                    else:
+                        continue
+                    problem.answered(answers[answer_index], asked_time)
                     return
 
     def provide_feedback(self, problem, state):
