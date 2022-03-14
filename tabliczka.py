@@ -213,7 +213,8 @@ class GUI:
     def __enter__(self):
         pygame.init()
         self._font = pygame.font.SysFont("monospace", self._font_size)
-        self._score_font = pygame.font.SysFont("unifont", self._score_font_size)  # TODO: use a picture for portability
+        if self._should_show_scores:
+            self._score_font = pygame.font.SysFont("unifont", self._score_font_size)  # TODO: use a picture for portability
         self._digit_size = self._font.size('J')
         self._screen_size = (self._font.size(' 100  10 * 10 = ?  100 ')[0], self._digit_size[1] * 7)
         self._screen = pygame.display.set_mode(self._screen_size)
