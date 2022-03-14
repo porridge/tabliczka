@@ -59,6 +59,7 @@ def main():
     parser.add_argument('--show_scores', action='store_true', help='Show scores in main window.')
     parser.add_argument('--show_feedback', action='store_true', help='Show feedback on wrong answers.')
     parser.add_argument('--debug', action='store_true', help='Turn on debug-level logging.')
+    parser.add_argument('--repl', action='store_true', help='Start the REPL before main program.')
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -69,6 +70,10 @@ def main():
     if args.dump:
         State.load().dump()
         return
+
+    if args.repl:
+        import code
+        code.interact()
 
     with get_ui_class(args.ui)(args.show_scores, args.show_feedback) as ui:
         try:
