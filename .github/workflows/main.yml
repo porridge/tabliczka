@@ -12,8 +12,9 @@ jobs:
       uses: porridge/pyinstaller-action-windows@main
       with:
         path: .
+        spec: "--windowed tabliczka.spec"
     - uses: actions/upload-artifact@v2
       with:
-        name: windows-executable
-        path: dist/windows
+        name: tabliczka.exe
+        path: dist/windows/tabliczka.exe
 
