@@ -1,0 +1,24 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: tabliczka
+Upstream-Contact: Marcin Owsiany <marcin@owsiany.pl>
+Source: https://github.com/porridge/tabliczka
+
+Files: *
+Copyright: 2021-2022 Marcin Owsiany <marcin@owsiany.pl>
+License: GPL-2+
+
+Files: score-*.svg
+Copyright: 2016 Fabián Alexis <fabian.alexis@openmailbox.org> <github.com/fabianalexisinostroza/Antu> <pinguinosyuncafe.wordpress.com>
+Source: https://github.com/fabianalexisinostroza/Antu-classic/
+        https://raw.githubusercontent.com/fabianalexisinostroza/Antu-classic/master/Antu/status/64/task-accepted.svg
+        https://raw.githubusercontent.com/fabianalexisinostroza/Antu-classic/master/Antu/status/64/task-reject.svg
+License: LGPL-2.1 or CC-BY-SA-3.0
+
+Files: score-*-64.png
+Copyright: 2022 Marcin Owsiany <marcin@owsiany.pl>
+License: LGPL-2.1
+Comment: These files are created from their respective SVG originals using
+  The GIMP, by changing contrast (-60) and brightness (+60). The file
+  "score-accepted.svg" was also changed from blue to green by changing the
+  colour value (-60).
+

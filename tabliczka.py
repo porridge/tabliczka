@@ -58,7 +58,7 @@ def main():
     parser.add_argument('--limit', type=int, help='Quit after correctly solving this many questions.')
     parser.add_argument('--show_feedback', action='store_true', help='Show feedback on wrong answers.')
     parser.add_argument('--show_scores', action='store_true', help='Show scores in main window.')
-    parser.add_argument('--score_font', default='unifont', help='Font to use for displaying scores.')
+    parser.add_argument('--score_font', default='monospace', help='Font to use for displaying scores.')
     parser.add_argument('--debug', action='store_true', help='Turn on debug-level logging.')
     parser.add_argument('--repl', action='store_true', help='Start the REPL before main program.')
     args = parser.parse_args()
@@ -230,7 +230,7 @@ class GUI:
         self._font = pygame.font.SysFont("monospace", self._font_size)
         if self._should_show_scores:
             logging.debug('Preparing score font "%s".', self._score_font_name)
-            self._score_font = pygame.font.SysFont(self._score_font_name, self._score_font_size)  # TODO: use a picture for portability
+            self._score_font = pygame.font.SysFont(self._score_font_name, self._score_font_size)
         self._digit_size = self._font.size('J')
         self._screen_size = (self._font.size(' 100  10 * 10 = ?  100 ')[0], self._digit_size[1] * 7)
         logging.debug('Setting display mode.')
@@ -303,14 +303,24 @@ class GUI:
 
     def _show_correct_score(self, state):
         screen_bottom_left = self._screen.get_rect().bottomleft
-        correct_score = self._score_font.render('✅ %4d' % state.correct_count(), 1, self._score_color)
-        correct_score_rect = correct_score.get_rect(bottomleft=screen_bottom_left)
+
+        correct_image = pygame.image.load('score-correct-64.png')
+        correct_image_rect = correct_image.get_rect(bottomleft=screen_bottom_left)
+        self._screen.blit(correct_image, correct_image_rect)
+
+        correct_score = self._score_font.render(' %4d' % state.correct_count(), 1, self._score_color)
+        correct_score_rect = correct_score.get_rect(midleft=correct_image_rect.midright)
         self._screen.blit(correct_score, correct_score_rect)
 
     def _show_error_score(self, state):
         screen_bottom_right = self._screen.get_rect().bottomright
-        error_score = self._score_font.render('%4d ❌' % state.error_count(), 1, self._score_color)
-        error_score_rect = error_score.get_rect(bottomright=screen_bottom_right)
+
+        error_image = pygame.image.load('score-error-64.png')
+        error_image_rect = error_image.get_rect(bottomright=screen_bottom_right)
+        self._screen.blit(error_image, error_image_rect)
+
+        error_score = self._score_font.render('%4d ' % state.error_count(), 1, self._score_color)
+        error_score_rect = error_score.get_rect(midright=error_image_rect.midleft)
         self._screen.blit(error_score, error_score_rect)
 
     def _show_question(self, problem):
