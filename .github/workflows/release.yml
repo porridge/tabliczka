@@ -1,14 +1,15 @@
+name: Release workflow
+
 on:
   push:
     tags:
     - 'v*'
 
-name: Release jobs
-
 jobs:
   build_and_upload:
     name: Build and upload Windows binary
     runs-on: ubuntu-latest
+    steps:
     - uses: actions/checkout@v2
     - name: PyInstaller Windows
       uses: porridge/pyinstaller-action-windows@main
