@@ -16,5 +16,5 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: tabliczka.exe
-        path: dist/windows.exe
+        path: dist/windows/tabliczka.exe
 
