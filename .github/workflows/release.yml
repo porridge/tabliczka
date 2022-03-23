@@ -15,7 +15,7 @@ jobs:
       uses: porridge/pyinstaller-action-windows@main
       with:
         path: .
-        spec: "--onefile --windowed tabliczka.spec"
+        spec: "--windowed tabliczka.spec"
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -32,6 +32,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/windows
+        asset_path: ./dist/windows.exe
         asset_name: tabliczka-${{ github.ref }}.exe
         asset_content_type: application/vnd.microsoft.portable-executable

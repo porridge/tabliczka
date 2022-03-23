@@ -12,9 +12,9 @@ jobs:
       uses: porridge/pyinstaller-action-windows@main
       with:
         path: .
-        spec: "--onefile --windowed tabliczka.spec"
+        spec: "--windowed tabliczka.spec"
     - uses: actions/upload-artifact@v2
       with:
         name: tabliczka.exe
-        path: dist/windows
+        path: dist/windows.exe
 
