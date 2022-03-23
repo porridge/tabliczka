@@ -33,5 +33,5 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./dist/windows/tabliczka.exe
-        asset_name: tabliczka-${{ github.ref }}.exe
+        asset_name: tabliczka-${{ github.ref_name }}.exe
         asset_content_type: application/vnd.microsoft.portable-executable
