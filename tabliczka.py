@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # tabliczka: a program for learning multiplication table
-# Copyright 2021 Marcin Owsiany <marcin@owsiany.pl>
+# Copyright 2021-2022 Marcin Owsiany <marcin@owsiany.pl>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
