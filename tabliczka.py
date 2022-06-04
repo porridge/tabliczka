@@ -55,14 +55,18 @@ class QuitException(Exception):
 
 def main():
     parser = argparse.ArgumentParser()
+
+    # Options mostly useful for an interactive terminal user.
     parser.add_argument('--ui', choices=['cli', 'gui'])
     parser.add_argument('--dump', action='store_true', help='Just show the saved state and quit.')
-    parser.add_argument('--limit', type=int, help='Quit after correctly solving this many questions.')
-    parser.add_argument('--show_feedback', action='store_true', help='Show feedback on wrong answers.')
-    parser.add_argument('--show_scores', action='store_true', help='Show scores in main window.')
-    parser.add_argument('--score_font', default='monospace', help='Font to use for displaying scores.')
     parser.add_argument('--debug', action='store_true', help='Turn on debug-level logging.')
     parser.add_argument('--repl', action='store_true', help='Start the REPL before main program.')
+    # Options that control behaviour.
+    parser.add_argument('--limit', type=int, help='Quit after correctly solving this many questions (0 means no limit).')
+    parser.add_argument('--show-feedback', action=argparse.BooleanOptionalAction, help='Show feedback on wrong answers.')
+    parser.add_argument('--show-scores', action=argparse.BooleanOptionalAction, help='Show scores in main window.')
+    parser.add_argument('--score-font', default='monospace', help='Font to use for displaying scores.')
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -78,11 +82,15 @@ def main():
         import code
         code.interact()
 
-    with get_ui_class(args.ui)(args.show_scores, args.show_feedback, args.score_font) as ui:
+    with get_ui_class(args.ui)(_truthify(args.show_scores), _truthify(args.show_feedback), args.score_font) as ui:
         try:
             run(ui, args.limit)
         except QuitException:
             pass
+
+
+def _truthify(setting):
+    return True if setting is None else setting
 
 
 def get_ui_class(ui_name):

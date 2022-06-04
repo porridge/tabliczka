@@ -35,17 +35,17 @@ Currently they are selected from the answers present in a 3x3 square visually su
 
 ### Showing Feedback
 
-By default the application does not provide any feedback on the answers.
-Pass the `--show_feedback` option to provide feedback on **incorrect** answers.
+By default the application provides feedback on **incorrect** answers.
 The application will briefly pause, highlighting the correct and incorrect answers using green and red background.
+Pass the `--no-show-feedback` option to disable providing feedback.
 
 ### Showing Scores
 
-By default the application does not show scores.
-Pass the `--show_scores` option to display the total number of correct and incorrect answers.
+By default the application displays the total number of correct and incorrect answers.
 They are displayed in the lower corners of the main window.
+Pass the `--no-show-scores` option to hide scores.
 
-Use the`--score_font` option to select the font to use for displaying scores.
+Use the`--score-font` option to select the font to use for displaying scores.
 
 ### Limiting the Number of Questions
 
