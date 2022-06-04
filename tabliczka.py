@@ -208,6 +208,10 @@ class CLI:
         print(":-)" if problem.answered_correctly() else ":-(")
 
 
+def _load(file_name):
+  return pygame.image.load(os.path.abspath(os.path.join(os.path.dirname(__file__), file_name)))
+
+
 class GUI:
     _background_color = pygame.Color('white')
     _text_color = pygame.Color('black')
@@ -304,7 +308,7 @@ class GUI:
     def _show_correct_score(self, state):
         screen_bottom_left = self._screen.get_rect().bottomleft
 
-        correct_image = pygame.image.load('score-correct-64.png')
+        correct_image = _load('score-correct-64.png')
         correct_image_rect = correct_image.get_rect(bottomleft=screen_bottom_left)
         self._screen.blit(correct_image, correct_image_rect)
 
@@ -315,7 +319,7 @@ class GUI:
     def _show_error_score(self, state):
         screen_bottom_right = self._screen.get_rect().bottomright
 
-        error_image = pygame.image.load('score-error-64.png')
+        error_image = _load('score-error-64.png')
         error_image_rect = error_image.get_rect(bottomright=screen_bottom_right)
         self._screen.blit(error_image, error_image_rect)
 
