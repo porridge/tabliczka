@@ -36,6 +36,7 @@ _FREQ_MAX = 100
 _ANSWER_SEC_MAX = 10
 _FREQ_QUICK = 1
 _ANSWER_SEC_QUICK= 2
+_DEFAULT_SCORE_FONT = 'monospace'
 
 _KEYS_MINECRAFT_LOWER = 'wdsa'
 _KEYS_MINECRAFT_UPPER = 'WDSA'
@@ -65,7 +66,7 @@ def main():
     parser.add_argument('--limit', type=int, help='Quit after correctly solving this many questions (0 means no limit).')
     parser.add_argument('--show-feedback', action=argparse.BooleanOptionalAction, help='Show feedback on wrong answers.')
     parser.add_argument('--show-scores', action=argparse.BooleanOptionalAction, help='Show scores in main window.')
-    parser.add_argument('--score-font', default='monospace', help='Font to use for displaying scores.')
+    parser.add_argument('--score-font', help='Font to use for displaying scores (defaults to %s).' % _DEFAULT_SCORE_FONT)
 
     args = parser.parse_args()
 
@@ -82,23 +83,47 @@ def main():
         import code
         code.interact()
 
-    with get_ui_class(args.ui)(_truthify(args.show_scores), _truthify(args.show_feedback), args.score_font) as ui:
+    settings = Settings(args)
+
+    with get_ui_class(args.ui)(settings) as ui:
         try:
-            run(ui, args.limit)
+            run(ui, settings)
         except QuitException:
             pass
-
-
-def _truthify(setting):
-    return True if setting is None else setting
 
 
 def get_ui_class(ui_name):
     return CLI if ui_name == 'cli' else GUI
 
 
-def run(ui, limit):
+class Settings:
+    def __init__(self, args):
+        self._args = args
+
+    @property
+    def limit(self):
+        return self._args.limit
+
+    @property
+    def show_scores(self):
+        return _truthify(self._args.show_scores)
+
+    @property
+    def show_feedback(self):
+        return _truthify(self._args.show_scores)
+
+    @property
+    def score_font(self):
+        return self._args.score_font or _DEFAULT_SCORE_FONT
+
+
+def _truthify(setting):
+    return True if setting is None else setting
+
+
+def run(ui, settings):
     state = State.load()
+    limit = settings.limit
     while limit is None or limit > 0:
         problem = state.generate_problem()
         ui.solve_problem(problem, state)
@@ -200,7 +225,7 @@ class State:
 
 
 class CLI:
-    def __init__(self, show_scores, show_feedback, score_font):
+    def __init__(self, settings):
         pass
 
     def __enter__(self):
@@ -226,12 +251,12 @@ class GUI:
     _answer_correct_color = pygame.Color('lightgreen')
     _answer_error_color = pygame.Color(238, 144, 144, 255)
 
-    def __init__(self, show_scores, show_feedback, score_font):
+    def __init__(self, settings):
         self._font_size = 80
         self._score_font_size = 50
-        self._should_show_scores = show_scores
-        self._should_show_feedback = show_feedback
-        self._score_font_name = score_font
+        self._should_show_scores = settings.show_scores
+        self._should_show_feedback = settings.show_feedback
+        self._score_font_name = settings.score_font
 
     def __enter__(self):
         logging.debug('Initializing pygame.')
