@@ -46,15 +46,13 @@ _home = os.path.expanduser('~')
 _xdg_state_home = os.environ.get('XDG_STATE_HOME') or os.path.join(_home, '.local', 'state')
 _state_home = os.path.join(_xdg_state_home, 'tabliczka')
 _state_file = os.path.join(_state_home, 'state.pickle')
-_log_file = os.path.join(_state_home, 'log.json')
-_LEGACY_STATE = os.path.expanduser("~/.tabliczka")
 
 
 class QuitException(Exception):
     pass
 
 
-def main():
+def get_argument_parser():
     parser = argparse.ArgumentParser()
 
     # Options mostly useful for an interactive terminal user.
@@ -68,6 +66,12 @@ def main():
     parser.add_argument('--show-scores', action=argparse.BooleanOptionalAction, help='Show scores in main window.')
     parser.add_argument('--score-font', help='Font to use for displaying scores (defaults to %s).' % _DEFAULT_SCORE_FONT)
 
+    return parser
+
+
+def main():
+
+    parser = get_argument_parser()
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -148,10 +152,7 @@ class State:
     @classmethod
     def load(cls):
         try:
-            try:
-                return cls.load_from(_state_file)
-            except:
-                return cls.load_from(_LEGACY_STATE)
+            return cls.load_from(_state_file)
         except Exception as e:
             logging.warning('Failed to load state, creating empty state: %s' % e)
             return cls()
