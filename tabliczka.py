@@ -19,6 +19,7 @@
 
 import argparse
 import itertools
+import json
 import logging
 import pickle
 import os
@@ -46,6 +47,7 @@ _home = os.path.expanduser('~')
 _xdg_state_home = os.environ.get('XDG_STATE_HOME') or os.path.join(_home, '.local', 'state')
 _state_home = os.path.join(_xdg_state_home, 'tabliczka')
 _state_file = os.path.join(_state_home, 'state.pickle')
+_settings_filename = os.path.join(_state_home, 'settings.json')
 
 
 class QuitException(Exception):
@@ -60,13 +62,27 @@ def get_argument_parser():
     parser.add_argument('--dump', action='store_true', help='Just show the saved state and quit.')
     parser.add_argument('--debug', action='store_true', help='Turn on debug-level logging.')
     parser.add_argument('--repl', action='store_true', help='Start the REPL before main program.')
-    # Options that control behaviour.
+    # Options that control behaviour. These are persisted in the settings file.
     parser.add_argument('--limit', type=int, help='Quit after correctly solving this many questions (0 means no limit).')
     parser.add_argument('--show-feedback', action=argparse.BooleanOptionalAction, help='Show feedback on wrong answers.')
     parser.add_argument('--show-scores', action=argparse.BooleanOptionalAction, help='Show scores in main window.')
     parser.add_argument('--score-font', help='Font to use for displaying scores (defaults to %s).' % _DEFAULT_SCORE_FONT)
 
     return parser
+
+
+class FS:
+    def read(self):
+        try:
+            with open(_settings_filename, "r") as settings_file:
+                return json.load(settings_file)
+        except FileNotFoundError:
+            pass
+
+    def write(self, settings):
+        os.makedirs(_state_home, mode=0o700, exist_ok=True)
+        with open(_settings_filename, "w") as settings_file:
+            json.dump(settings, settings_file)
 
 
 def main():
@@ -87,7 +103,8 @@ def main():
         import code
         code.interact()
 
-    settings = Settings(args)
+    fs = FS()
+    settings = Settings(fs, args)
 
     with get_ui_class(args.ui)(settings) as ui:
         try:
@@ -101,24 +118,46 @@ def get_ui_class(ui_name):
 
 
 class Settings:
-    def __init__(self, args):
-        self._args = args
+
+    def __init__(self, fs, parsed_args):
+        self._s = dict((k, None) for k in [
+            'limit', 'show_scores', 'show_feedback', 'score_font'])
+        self._load_settings(fs)
+        self._merge_settings(parsed_args)
+        self._save_settings(fs)
 
     @property
     def limit(self):
-        return self._args.limit
+        return self._s['limit']
 
     @property
     def show_scores(self):
-        return _truthify(self._args.show_scores)
+        return _truthify(self._s['show_scores'])
 
     @property
     def show_feedback(self):
-        return _truthify(self._args.show_scores)
+        return _truthify(self._s['show_feedback'])
 
     @property
     def score_font(self):
-        return self._args.score_font or _DEFAULT_SCORE_FONT
+        return self._s['score_font'] or _DEFAULT_SCORE_FONT
+
+    def _load_settings(self, fs):
+        loaded = fs.read()
+        if not loaded:
+            return
+        for s in self._s.keys():
+            if s in loaded and loaded[s] is not None:
+                self._s[s] = loaded[s]
+
+    def _merge_settings(self, overrides):
+        for s in self._s.keys():
+            override = getattr(overrides, s, None)
+            if override is not None:
+                self._s[s] = override
+
+    def _save_settings(self, fs):
+        fs.write(dict(kv for kv in self._s.items() if kv[1] is not None))
 
 
 def _truthify(setting):

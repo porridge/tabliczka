@@ -33,24 +33,34 @@ Currently they are selected from the answers present in a 3x3 square visually su
 
 ## Optional Features
 
+Features can be turned on or off using command line options.
+For features listed in this section the setting is saved by the program.
+This means the setting applies also on future program executions, unless explicitly changed.
+
 ### Showing Feedback
 
 By default the application provides feedback on **incorrect** answers.
 The application will briefly pause, highlighting the correct and incorrect answers using green and red background.
-Pass the `--no-show-feedback` option to disable providing feedback.
+- Pass the `--no-show-feedback` option to disable providing feedback.
+- Pass the `--show-feedback` option to enable providing feedback.
 
 ### Showing Scores
 
 By default the application displays the total number of correct and incorrect answers.
 They are displayed in the lower corners of the main window.
-Pass the `--no-show-scores` option to hide scores.
-
-Use the`--score-font` option to select the font to use for displaying scores.
+- Pass the `--no-show-scores` option to hide scores.
+- Pass the `--show-scores` option to show scores.
+- Use the`--score-font` option to select the font to use for displaying scores.
 
 ### Limiting the Number of Questions
 
 By default the application will keep asking questions until it is closed.
-Pass the `--limit N` option to exit once `N` questions have been answered correctly.
+- Pass the `--limit N` option to exit once `N` questions have been answered correctly.
+- Pass `--limit 0` to bring back the default behaviour of never-ending questions.
+
+## Special options
+
+Options listed in this section only apply to the current execution of the program.
 
 ### Showing Saved State
 
