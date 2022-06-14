@@ -168,7 +168,7 @@ def run(ui, settings):
     state = State.load()
     limit = settings.limit
     while limit is None or limit > 0:
-        problem = state.generate_problem()
+        problem = state.generate_problem(ui.answer_count())
         ui.solve_problem(problem, state)
         state.update_from(problem)
         if not problem.answered_correctly():
@@ -241,12 +241,12 @@ class State:
             pickle.dump(self._correct_count, state_file, protocol=-1)
             pickle.dump(self._error_count, state_file, protocol=-1)
 
-    def generate_problem(self):
+    def generate_problem(self, answer_count):
         repetitions = (itertools.repeat(e[0], int(e[1])) for e in self._frequency_map.items() if e[0] != self._last_generated)
         questions = list(i for i in (itertools.chain(*repetitions)))
         generated = random.choice(questions)
         self._last_generated = generated
-        return Problem(*generated)
+        return Problem(*generated, answer_count)
 
     def dump(self):
         print('Frequency map:')
@@ -282,6 +282,8 @@ class CLI:
     def provide_feedback(self, problem, state):
         print(":-)" if problem.answered_correctly() else ":-(")
 
+    def answer_count(self):
+        return 4
 
 class GUI:
     _background_color = pygame.Color('white')
@@ -323,6 +325,9 @@ class GUI:
 
     def _tick(self):
         self._clock.tick(30) # low framerate is fine for this app
+
+    def answer_count(self):
+        return 4
 
     def solve_problem(self, problem, state):
         answers = self._display_problem(problem, state)
@@ -437,10 +442,11 @@ class GUI:
 
 class Problem:
     
-    def __init__(self, a, b):
+    def __init__(self, a, b, answer_count):
         self._a = a
         self._b = b
-        self._answers = list(random.sample(sorted(self.wrong_answers()), 3)) + [self.correct_answer()]
+        wrong_answer_count = answer_count - 1
+        self._answers = list(random.sample(sorted(self.wrong_answers()), wrong_answer_count)) + [self.correct_answer()]
         random.shuffle(self._answers)
 
     def __str__(self):
