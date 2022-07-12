@@ -7,7 +7,7 @@ An application for learning multiplication table.
 ### Basic Operation
 
 The application selects a question from a 10x10 multiplication table and displays it in the middle of the screen.
-It also displays four answers to choose from: below, above and on both sides of the question.
+It also displays possible answers to choose from, next to the question.
 Only one of the answers is correct.
 
 The user needs to select the correct answer by pressing a key corresponding to the position of the answer.
@@ -51,6 +51,15 @@ They are displayed in the lower corners of the main window.
 - Pass the `--no-show-scores` option to hide scores.
 - Pass the `--show-scores` option to show scores.
 - Use the`--score-font` option to select the font to use for displaying scores.
+
+### Choosing from two or four possible answers
+
+By default the application displays four possible answers.
+They are shown below, above and on both sides of the question.
+- Pass the `--answer-scheme=EW` option to show only two possible answers.
+- Pass the `--answer-scheme=NESW` option to show four possible answers.
+
+In either mode, only one of the displayed answers is the correct one.
 
 ### Limiting the Number of Questions
 

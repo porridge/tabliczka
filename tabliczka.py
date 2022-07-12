@@ -38,10 +38,12 @@ _ANSWER_SEC_MAX = 10
 _FREQ_QUICK = 1
 _ANSWER_SEC_QUICK= 2
 _DEFAULT_SCORE_FONT = 'monospace'
+_DEFAULT_ANSWER_SCHEME = 'NESW'
 
+_KEYS_ARROWS = (pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT)
+# The order of the following matches the order of the above.
 _KEYS_MINECRAFT_LOWER = 'wdsa'
 _KEYS_MINECRAFT_UPPER = 'WDSA'
-_KEYS_ARROWS = (pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT)
 
 _home = os.path.expanduser('~')
 _xdg_state_home = os.environ.get('XDG_STATE_HOME') or os.path.join(_home, '.local', 'state')
@@ -67,6 +69,7 @@ def get_argument_parser():
     parser.add_argument('--show-feedback', action=argparse.BooleanOptionalAction, help='Show feedback on wrong answers.')
     parser.add_argument('--show-scores', action=argparse.BooleanOptionalAction, help='Show scores in main window.')
     parser.add_argument('--score-font', help='Font to use for displaying scores (defaults to %s).' % _DEFAULT_SCORE_FONT)
+    parser.add_argument('--answer-scheme', choices=[_DEFAULT_ANSWER_SCHEME, 'EW'], default=None, help='Where to show possible answers (letters stand for geographic directions relative to displayed question).')
 
     return parser
 
@@ -121,7 +124,7 @@ class Settings:
 
     def __init__(self, fs, parsed_args):
         self._s = dict((k, None) for k in [
-            'limit', 'show_scores', 'show_feedback', 'score_font'])
+            'limit', 'show_scores', 'show_feedback', 'score_font', 'answer_scheme'])
         self._load_settings(fs)
         self._merge_settings(parsed_args)
         self._save_settings(fs)
@@ -141,6 +144,10 @@ class Settings:
     @property
     def score_font(self):
         return self._s['score_font'] or _DEFAULT_SCORE_FONT
+
+    @property
+    def answer_scheme(self):
+        return self._s['answer_scheme'] or _DEFAULT_ANSWER_SCHEME
 
     def _load_settings(self, fs):
         loaded = fs.read()
@@ -299,6 +306,7 @@ class GUI:
         self._should_show_scores = settings.show_scores
         self._should_show_feedback = settings.show_feedback
         self._score_font_name = settings.score_font
+        self._answer_scheme = settings.answer_scheme
 
     def __enter__(self):
         logging.debug('Initializing pygame.')
@@ -327,10 +335,10 @@ class GUI:
         self._clock.tick(30) # low framerate is fine for this app
 
     def answer_count(self):
-        return 4
+        return len(self._answer_scheme)
 
     def solve_problem(self, problem, state):
-        answers = self._display_problem(problem, state)
+        answer_map = self._display_problem(problem, state)
 
         asked_time = time.time()
 
@@ -342,16 +350,12 @@ class GUI:
                     logging.debug('Initiating shutdown.')
                     raise QuitException()
                 if event.type == pygame.KEYDOWN:
-                    if event.unicode and event.unicode in _KEYS_MINECRAFT_LOWER:
-                        answer_index = _KEYS_MINECRAFT_LOWER.index(event.unicode)
-                    elif event.unicode and event.unicode in _KEYS_MINECRAFT_UPPER:
-                        answer_index = _KEYS_MINECRAFT_UPPER.index(event.unicode)
-                    elif event.key in _KEYS_ARROWS:
-                        answer_index = _KEYS_ARROWS.index(event.key)
+                    logging.debug(answer_map)
+                    if answer_map.has_answer_for(event):
+                        problem.answered(answer_map.answer_for(event), asked_time)
+                        return
                     else:
                         continue
-                    problem.answered(answers[answer_index], asked_time)
-                    return
 
     def provide_feedback(self, problem, state):
         if not self._should_show_feedback:
@@ -374,12 +378,11 @@ class GUI:
             self._show_correct_score(state)
             self._show_error_score(state)
         self._show_question(problem)
-        answers = problem.answers()
-        self._show_answers(problem, answers, reveal_solution=reveal_solution)
+        answer_map = self._show_answers(problem, problem.answers(), reveal_solution=reveal_solution)
         logging.debug('Updating display.')
         pygame.display.flip()
         logging.debug('Problem displayed.')
-        return answers
+        return answer_map
 
     def _show_correct_score(self, state):
         screen_bottom_left = self._screen.get_rect().bottomleft
@@ -412,26 +415,42 @@ class GUI:
 
     def _show_answers(self, problem, answers, reveal_solution=False):
         screen_center = self._screen.get_rect().center
+        answers = list(answers) # copy before mutating the list
+        answer_map = AnswerMap()
 
-        answer_up = self._font.render(answers[0], 1, self._text_color)
-        answer_up_rect = answer_up.get_rect(center=(screen_center[0], int(1.5*self._digit_size[1])))
-        pygame.draw.rect(self._screen, self._answer_color(problem, answers[0], reveal_solution), answer_up_rect)
-        self._screen.blit(answer_up, answer_up_rect)
+        if 'N' in self._answer_scheme:
+            answer_up = answers.pop(0)
+            answer_up_surface = self._font.render(answer_up, 1, self._text_color)
+            answer_up_rect = answer_up_surface.get_rect(center=(screen_center[0], int(1.5*self._digit_size[1])))
+            pygame.draw.rect(self._screen, self._answer_color(problem, answer_up, reveal_solution), answer_up_rect)
+            self._screen.blit(answer_up_surface, answer_up_rect)
+            answer_map.answer_up(answer_up)
 
-        answer_right = self._font.render(answers[1], 1, self._text_color)
-        answer_right_rect = answer_right.get_rect(center=(int(21*self._digit_size[0]), screen_center[1]))
-        pygame.draw.rect(self._screen, self._answer_color(problem, answers[1], reveal_solution), answer_right_rect)
-        self._screen.blit(answer_right, answer_right_rect)
+        if 'E' in self._answer_scheme:
+            answer_right = answers.pop(0)
+            answer_right_surface = self._font.render(answer_right, 1, self._text_color)
+            answer_right_rect = answer_right_surface.get_rect(center=(int(21*self._digit_size[0]), screen_center[1]))
+            pygame.draw.rect(self._screen, self._answer_color(problem, answer_right, reveal_solution), answer_right_rect)
+            self._screen.blit(answer_right_surface, answer_right_rect)
+            answer_map.answer_right(answer_right)
 
-        answer_down = self._font.render(answers[2], 1, self._text_color)
-        answer_down_rect = answer_down.get_rect(center=(screen_center[0], int(5.5*self._digit_size[1])))
-        pygame.draw.rect(self._screen, self._answer_color(problem, answers[2], reveal_solution), answer_down_rect)
-        self._screen.blit(answer_down, answer_down_rect)
+        if 'S' in self._answer_scheme:
+            answer_down = answers.pop(0)
+            answer_down_surface = self._font.render(answer_down, 1, self._text_color)
+            answer_down_rect = answer_down_surface.get_rect(center=(screen_center[0], int(5.5*self._digit_size[1])))
+            pygame.draw.rect(self._screen, self._answer_color(problem, answer_down, reveal_solution), answer_down_rect)
+            self._screen.blit(answer_down_surface, answer_down_rect)
+            answer_map.answer_down(answer_down)
 
-        answer_left = self._font.render(answers[3], 1, self._text_color)
-        answer_left_rect = answer_left.get_rect(center=(int(3*self._digit_size[0]), screen_center[1]))
-        pygame.draw.rect(self._screen, self._answer_color(problem, answers[3], reveal_solution), answer_left_rect)
-        self._screen.blit(answer_left, answer_left_rect)
+        if 'W' in self._answer_scheme:
+            answer_left = answers.pop(0)
+            answer_left_surface = self._font.render(answer_left, 1, self._text_color)
+            answer_left_rect = answer_left_surface.get_rect(center=(int(3*self._digit_size[0]), screen_center[1]))
+            pygame.draw.rect(self._screen, self._answer_color(problem, answer_left, reveal_solution), answer_left_rect)
+            self._screen.blit(answer_left_surface, answer_left_rect)
+            answer_map.answer_left(answer_left)
+
+        return answer_map
 
 
     def _answer_color(self, problem, answer, reveal_solution=False):
@@ -440,8 +459,45 @@ class GUI:
         return self._answer_correct_color if problem.correct_answer() == answer else self._answer_error_color
 
 
+class AnswerMap:
+
+    def __init__(self):
+        self._answers = dict(
+                up=None,
+                right=None,
+                down=None,
+                left=None)
+
+    def answer_up(self, answer):
+        self._answers['up'] = answer
+
+    def answer_right(self, answer):
+        self._answers['right'] = answer
+
+    def answer_down(self, answer):
+        self._answers['down'] = answer
+
+    def answer_left(self, answer):
+        self._answers['left'] = answer
+
+    def has_answer_for(self, event):
+        return self.answer_for(event) != None
+
+    def answer_for(self, event):
+        if event.unicode and event.unicode in _KEYS_MINECRAFT_LOWER:
+            answer_index = _KEYS_MINECRAFT_LOWER.index(event.unicode)
+        elif event.unicode and event.unicode in _KEYS_MINECRAFT_UPPER:
+            answer_index = _KEYS_MINECRAFT_UPPER.index(event.unicode)
+        elif event.key and event.key in _KEYS_ARROWS:
+            answer_index = _KEYS_ARROWS.index(event.key)
+        else:
+            return None
+        direction = ['up', 'right', 'down', 'left'][answer_index]
+        return self._answers[direction]
+
+
 class Problem:
-    
+
     def __init__(self, a, b, answer_count):
         self._a = a
         self._b = b
